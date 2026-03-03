@@ -62,6 +62,28 @@ public abstract class AppletBase extends Applet {
     }
 
     /**
+     * Send an unsigned 32-bit integer (u32, big-endian, 4 bytes) as response.
+     * Java Card Classic has no native int; this packs 4 bytes manually.
+     */
+    protected void sendU32(APDU apdu, int value) {
+        byte[] buf = apdu.getBuffer();
+        buf[0] = (byte) ((value >> 24) & 0xFF);
+        buf[1] = (byte) ((value >> 16) & 0xFF);
+        buf[2] = (byte) ((value >> 8) & 0xFF);
+        buf[3] = (byte) (value & 0xFF);
+        apdu.setOutgoingAndSend((short) 0, (short) 4);
+    }
+
+    /**
+     * Send a boolean (1 byte: 0x00 = false, 0x01 = true) as response.
+     */
+    protected void sendBool(APDU apdu, boolean value) {
+        byte[] buf = apdu.getBuffer();
+        buf[0] = value ? (byte) 0x01 : (byte) 0x00;
+        apdu.setOutgoingAndSend((short) 0, (short) 1);
+    }
+
+    /**
      * Send a byte array as response.
      */
     protected void sendBytes(APDU apdu, byte[] data, short offset, short length) {
@@ -116,6 +138,25 @@ public abstract class AppletBase extends Applet {
     }
 
     /**
+     * Read a u32 (big-endian, 4 bytes) from APDU data at the given offset (relative to CDATA).
+     */
+    protected int readU32(byte[] buf, short offset) {
+        short base = (short) (ISO7816.OFFSET_CDATA + offset);
+        return ((buf[base] & 0xFF) << 24)
+             | ((buf[(short) (base + 1)] & 0xFF) << 16)
+             | ((buf[(short) (base + 2)] & 0xFF) << 8)
+             | (buf[(short) (base + 3)] & 0xFF);
+    }
+
+    /**
+     * Read a boolean from APDU data at the given offset (relative to CDATA).
+     * 0x00 = false, non-zero = true.
+     */
+    protected boolean readBool(byte[] buf, short offset) {
+        return buf[(short) (ISO7816.OFFSET_CDATA + offset)] != (byte) 0x00;
+    }
+
+    /**
      * Pack a u8 into buffer at the given offset. Returns next offset.
      */
     protected short packU8(byte[] buf, short offset, byte value) {
@@ -129,6 +170,25 @@ public abstract class AppletBase extends Applet {
     protected short packU16(byte[] buf, short offset, short value) {
         Util.setShort(buf, offset, value);
         return (short) (offset + 2);
+    }
+
+    /**
+     * Pack a u32 (big-endian, 4 bytes) into buffer at the given offset. Returns next offset.
+     */
+    protected short packU32(byte[] buf, short offset, int value) {
+        buf[offset] = (byte) ((value >> 24) & 0xFF);
+        buf[(short) (offset + 1)] = (byte) ((value >> 16) & 0xFF);
+        buf[(short) (offset + 2)] = (byte) ((value >> 8) & 0xFF);
+        buf[(short) (offset + 3)] = (byte) (value & 0xFF);
+        return (short) (offset + 4);
+    }
+
+    /**
+     * Pack a boolean (0x00/0x01) into buffer at the given offset. Returns next offset.
+     */
+    protected short packBool(byte[] buf, short offset, boolean value) {
+        buf[offset] = value ? (byte) 0x01 : (byte) 0x00;
+        return (short) (offset + 1);
     }
 
     /**
