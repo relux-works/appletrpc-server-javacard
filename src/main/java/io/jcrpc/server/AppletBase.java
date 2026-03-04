@@ -1,4 +1,4 @@
-package com.appletrpc.server;
+package io.jcrpc.server;
 
 import javacard.framework.APDU;
 import javacard.framework.Applet;
@@ -7,7 +7,7 @@ import javacard.framework.ISOException;
 import javacard.framework.Util;
 
 /**
- * Base class for appletRPC-generated skeletons.
+ * Base class for javacard-rpc-generated skeletons.
  *
  * Provides:
  * - CLA validation (subclass sets via constructor)
